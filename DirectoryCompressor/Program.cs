@@ -68,6 +68,19 @@ namespace DirectoryCompressor
                         di.Delete(true);
                 }
             }
+            foreach (var s in Directory.GetFiles(a.SourceDirectory))
+            {
+                FileInfo fi = new FileInfo(s);
+                // zip ONLY LOG files for now
+                if (fi.Extension == ".log" && fi.CreationTime <= DateTime.Now.AddDays(-lastmodifieddays))
+                {
+                    string filename = fi.Name + ".7z";
+                    Archiver.CreateZipFile(s, Path.Combine(a.DestinationDirectory, filename));
+                    Archiver.TestZipFile(Path.Combine(a.DestinationDirectory, filename));
+                    if (!string.IsNullOrEmpty(a.AutoDelete) && a.AutoDelete == "1") // ONLY 1! Special value
+                        fi.Delete();
+                }
+            }
         }
 
         private static void ShowHelp()
