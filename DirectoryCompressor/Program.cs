@@ -39,9 +39,9 @@ namespace DirectoryCompressor
             p.Setup(arg => arg.Help).As('h', "help");
 
             var res = p.Parse(args);
-           
+
             var a = p.Object;
-            
+
             if (a.Help)
             {
                 ShowHelp();
@@ -61,9 +61,12 @@ namespace DirectoryCompressor
                 DirectoryInfo di = new DirectoryInfo(s);
                 if (di.CreationTime <= DateTime.Now.AddDays(-lastmodifieddays))
                 {
-                    string filename = di.Name + ".7z";
-                    Archiver.CreateZipFile(s, Path.Combine(a.DestinationDirectory, filename));
-                    Archiver.TestZipFile(Path.Combine(a.DestinationDirectory, filename));
+                    if (DirSize(di) > 0)
+                    {
+                        string filename = di.Name + ".7z";
+                        Archiver.CreateZipFile(s, Path.Combine(a.DestinationDirectory, filename));
+                        Archiver.TestZipFile(Path.Combine(a.DestinationDirectory, filename));
+                    }
                     if (!string.IsNullOrEmpty(a.AutoDelete) && a.AutoDelete == "1") // ONLY 1! Special value
                         di.Delete(true);
                 }
@@ -81,6 +84,24 @@ namespace DirectoryCompressor
                         fi.Delete();
                 }
             }
+        }
+
+        private static long DirSize(DirectoryInfo d)
+        {
+            long size = 0;
+            // Add file sizes.
+            FileInfo[] fis = d.GetFiles();
+            foreach (FileInfo fi in fis)
+            {
+                size += fi.Length;
+            }
+            // Add subdirectory sizes.
+            DirectoryInfo[] dis = d.GetDirectories();
+            foreach (DirectoryInfo di in dis)
+            {
+                size += DirSize(di);
+            }
+            return size;
         }
 
         private static void ShowHelp()
