@@ -3,7 +3,7 @@ using System.Configuration;
 using System.IO;
 using System.Reflection;
 using Fclp; 
-
+ 
 namespace DirectoryCompressor
 {
     class Program
