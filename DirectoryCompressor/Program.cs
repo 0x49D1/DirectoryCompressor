@@ -2,8 +2,8 @@
 using System.Configuration;
 using System.IO;
 using System.Reflection;
-using Fclp; 
- 
+using Fclp;
+
 namespace DirectoryCompressor
 {
     class Program
@@ -52,11 +52,14 @@ namespace DirectoryCompressor
             {
                 throw new AmbiguousMatchException("Errors found in parameters!");
             }
+
             int lastmodifieddays = int.Parse(ConfigurationManager.AppSettings["lastmodifieddays"]); // Default 15 days
             if (a.LastModifiedDays.HasValue && a.LastModifiedDays.Value > 0)
                 lastmodifieddays = a.LastModifiedDays.Value;
 
-            foreach (var s in Directory.GetDirectories(a.SourceDirectory))
+            var dirs = Directory.GetDirectories(a.SourceDirectory);
+            Console.WriteLine($"Found {dirs.Length} directories for possible processing");
+            foreach (var s in dirs)
             {
                 DirectoryInfo di = new DirectoryInfo(s);
                 if (di.CreationTime <= DateTime.Now.AddDays(-lastmodifieddays))
@@ -67,11 +70,17 @@ namespace DirectoryCompressor
                         Archiver.CreateZipFile(s, Path.Combine(a.DestinationDirectory, filename));
                         Archiver.TestZipFile(Path.Combine(a.DestinationDirectory, filename));
                     }
+
                     if (!string.IsNullOrEmpty(a.AutoDelete) && a.AutoDelete == "1") // ONLY 1! Special value
                         di.Delete(true);
+                    Console.WriteLine($"Processed {di.Name}");
                 }
             }
-            foreach (var s in Directory.GetFiles(a.SourceDirectory))
+
+            Console.WriteLine("Directories processed");
+            var files = Directory.GetFiles(a.SourceDirectory);
+            Console.WriteLine($"Found {files.Length} files for possible processing");
+            foreach (var s in files)
             {
                 FileInfo fi = new FileInfo(s);
                 // zip ONLY LOG files for now
@@ -82,8 +91,11 @@ namespace DirectoryCompressor
                     Archiver.TestZipFile(Path.Combine(a.DestinationDirectory, filename));
                     if (!string.IsNullOrEmpty(a.AutoDelete) && a.AutoDelete == "1") // ONLY 1! Special value
                         fi.Delete();
+                    Console.WriteLine($"Processed {fi.Name}");
                 }
             }
+
+            Console.WriteLine("Files processed");
         }
 
         private static long DirSize(DirectoryInfo d)
@@ -95,19 +107,21 @@ namespace DirectoryCompressor
             {
                 size += fi.Length;
             }
+
             // Add subdirectory sizes.
             DirectoryInfo[] dis = d.GetDirectories();
             foreach (DirectoryInfo di in dis)
             {
                 size += DirSize(di);
             }
+
             return size;
         }
 
         private static void ShowHelp()
         {
             Console.WriteLine("s required    source directory to search subdirectories for archiving");
-            Console.WriteLine("a,    in case this parameter is set to 1 - REMOVE recursively directories that were successfully archived");
+            Console.WriteLine("a,    autodelete; in case this parameter is set to 1 - REMOVE recursively directories that were successfully archived");
             Console.WriteLine("l,    in case this parameter is set only directories, modified more than l will be archived: -l 500    - archive folders, that were modified 500 days before now");
 
             Console.ReadKey();
