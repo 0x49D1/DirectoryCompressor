@@ -53,16 +53,16 @@ namespace DirectoryCompressor
                 throw new AmbiguousMatchException("Errors found in parameters!");
             }
 
-            int lastmodifieddays = int.Parse(ConfigurationManager.AppSettings["lastmodifieddays"]); // Default 15 days
+            int lastModifiedDays = int.Parse(ConfigurationManager.AppSettings["lastmodifieddays"]); // Default 15 days
             if (a.LastModifiedDays.HasValue && a.LastModifiedDays.Value > 0)
-                lastmodifieddays = a.LastModifiedDays.Value;
+                lastModifiedDays = a.LastModifiedDays.Value;
 
             var dirs = Directory.GetDirectories(a.SourceDirectory);
             Console.WriteLine($"Found {dirs.Length} directories for possible processing");
             foreach (var s in dirs)
             {
                 DirectoryInfo di = new DirectoryInfo(s);
-                if (di.CreationTime <= DateTime.Now.AddDays(-lastmodifieddays))
+                if (di.CreationTime <= DateTime.Now.AddDays(-lastModifiedDays))
                 {
                     if (DirSize(di) > 0)
                     {
@@ -84,7 +84,7 @@ namespace DirectoryCompressor
             {
                 FileInfo fi = new FileInfo(s);
                 // zip ONLY LOG files for now
-                if (fi.Extension == ".log" && fi.CreationTime <= DateTime.Now.AddDays(-lastmodifieddays))
+                if (fi.Extension == ".log" && fi.CreationTime <= DateTime.Now.AddDays(-lastModifiedDays))
                 {
                     string filename = fi.Name + ".7z";
                     Archiver.CreateZipFile(s, Path.Combine(a.DestinationDirectory, filename));
@@ -95,7 +95,7 @@ namespace DirectoryCompressor
                 }
             }
 
-            Console.WriteLine("Files processed");
+            Console.WriteLine("Finished processing");
         }
 
         private static long DirSize(DirectoryInfo d)
@@ -120,9 +120,10 @@ namespace DirectoryCompressor
 
         private static void ShowHelp()
         {
-            Console.WriteLine("s required    source directory to search subdirectories for archiving");
+            Console.WriteLine("s required    source directory; to search subdirectories for archiving");
             Console.WriteLine("a,    autodelete; in case this parameter is set to 1 - REMOVE recursively directories that were successfully archived");
-            Console.WriteLine("l,    in case this parameter is set only directories, modified more than l will be archived: -l 500    - archive folders, that were modified 500 days before now");
+            Console.WriteLine("l,    lastmodified; in case this parameter is set only directories, modified more than l will be archived: -l 500    - archive folders, that were modified 500 days before now");
+            Console.WriteLine("d,    destination directory; default is same as source directory");
 
             Console.ReadKey();
         }
